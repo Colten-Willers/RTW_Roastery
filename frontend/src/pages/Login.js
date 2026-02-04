@@ -1,5 +1,5 @@
-import React, { useState, useContext } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useContext, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ const API = `${BACKEND_URL}/api`;
 const Login = () => {
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -30,7 +31,17 @@ const Login = () => {
       const response = await axios.post(`${API}/auth/login`, formData);
       login(response.data.token, response.data.user);
       toast.success('Welcome back!');
-      navigate('/dashboard');
+      
+      // Check if there's a pending blend
+      const pendingBlend = localStorage.getItem('pendingBlend');
+      const redirect = searchParams.get('redirect');
+      
+      if (pendingBlend && redirect === 'custom-builder') {
+        navigate('/custom-builder');
+        toast.info('Continue building your custom blend!');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (error) {
       console.error('Login error:', error);
       toast.error(error.response?.data?.detail || 'Login failed');
