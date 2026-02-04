@@ -426,11 +426,13 @@ async def update_subscription_status(sub_id: str, status: str, current_user: Use
 # ============ PAYMENT ROUTES ============
 
 @api_router.post("/checkout/session", response_model=CheckoutSessionResponse)
-async def create_checkout_session(checkout_req: CheckoutRequest, current_user: User = Depends(get_current_user)):
-    # Get order details
-    order = await db.orders.find_one({"id": checkout_req.order_id, "user_id": current_user.id}, {"_id": 0})
+async def create_checkout_session(checkout_req: CheckoutRequest, current_user: Optional[User] = None):
+    # Get order details - allow guest orders
+    order = await db.orders.find_one({" id": checkout_req.order_id}, {"_id": 0})
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
+    
+    user_id = current_user.id if current_user else order.get('guest_email', 'guest')
     
     # Initialize Stripe checkout
     webhook_url = f"{checkout_req.origin_url}/api/webhook/stripe"
@@ -448,7 +450,7 @@ async def create_checkout_session(checkout_req: CheckoutRequest, current_user: U
         cancel_url=cancel_url,
         metadata={
             "order_id": order['id'],
-            "user_id": current_user.id
+            "user_id": user_id
         }
     )
     
@@ -456,7 +458,7 @@ async def create_checkout_session(checkout_req: CheckoutRequest, current_user: U
     
     # Create payment transaction record
     transaction = PaymentTransaction(
-        user_id=current_user.id,
+        user_id=user_id,
         order_id=order['id'],
         session_id=session.session_id,
         amount=order['total_amount'],
