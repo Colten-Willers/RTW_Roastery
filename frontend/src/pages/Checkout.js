@@ -205,8 +205,27 @@ const Checkout = () => {
             {/* Shipping Information */}
             <div>
               <Card className="p-6 border-polo-green/20">
-                <h2 className="text-2xl font-display font-semibold text-polo-green mb-6">Shipping Address</h2>
+                <h2 className="text-2xl font-display font-semibold text-polo-green mb-6">
+                  {isGuest ? 'Contact Information' : 'Shipping Address'}
+                </h2>
                 <div className="space-y-4">
+                  {isGuest && (
+                    <div>
+                      <Label htmlFor="guest-email">Email Address *</Label>
+                      <Input
+                        id="guest-email"
+                        data-testid="guest-email-input"
+                        type="email"
+                        placeholder="your@email.com"
+                        value={guestEmail}
+                        onChange={(e) => setGuestEmail(e.target.value)}
+                        className="mt-2"
+                      />
+                      <p className="text-xs text-[var(--text-secondary)] mt-1">
+                        We'll send your order confirmation here
+                      </p>
+                    </div>
+                  )}
                   <div>
                     <Label htmlFor="name">Full Name</Label>
                     <Input
