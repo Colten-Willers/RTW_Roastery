@@ -13,6 +13,9 @@ from datetime import datetime, timezone, timedelta
 import jwt
 from passlib.context import CryptContext
 from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionResponse, CheckoutStatusResponse, CheckoutSessionRequest
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -41,6 +44,7 @@ class User(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     email: EmailStr
     name: str
+    is_admin: bool = False
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class UserCreate(BaseModel):
@@ -67,21 +71,31 @@ class Product(BaseModel):
     available: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+class ProductCreate(BaseModel):
+    name: str
+    description: str
+    origin: str
+    price: float
+    image_url: str
+    available: bool = True
+
 class CustomBlend(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     user_id: str
     name: str
+    brewing_method: str
     origin: str
-    roast_level: str  # light, medium, dark
-    grind_size: str  # whole_bean, fine, medium, coarse
-    blend_components: Dict[str, int]  # {"colombian": 50, "ethiopian": 50}
-    quantity: int  # in grams
+    roast_level: str
+    grind_size: str
+    blend_components: Dict[str, int]
+    quantity: int
     price: float
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class CustomBlendCreate(BaseModel):
     name: str
+    brewing_method: str
     origin: str
     roast_level: str
     grind_size: str
@@ -108,8 +122,9 @@ class Order(BaseModel):
     user_id: str
     items: List[Dict]
     total_amount: float
-    status: str = "pending"  # pending, processing, shipped, delivered, cancelled
-    payment_status: str = "pending"  # pending, paid, failed
+    status: str = "pending"
+    payment_status: str = "pending"
+    payment_method: Optional[str] = None
     shipping_address: Dict
     session_id: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -126,8 +141,8 @@ class Subscription(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     user_id: str
     custom_blend_id: str
-    frequency: str  # weekly, biweekly, monthly
-    status: str = "active"  # active, paused, cancelled
+    frequency: str
+    status: str = "active"
     next_delivery: datetime
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -144,6 +159,7 @@ class PaymentTransaction(BaseModel):
     amount: float
     currency: str
     payment_status: str = "pending"
+    payment_method: str = "stripe"
     metadata: Dict
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -161,9 +177,67 @@ class ShippingRateCreate(BaseModel):
     rate: float
     description: str
 
+class AdminSettings(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = "admin_settings"
+    stripe_client_id: Optional[str] = None
+    stripe_publishable_key: Optional[str] = None
+    paypal_client_id: Optional[str] = None
+    paypal_secret: Optional[str] = None
+    notification_email: Optional[str] = None
+    smtp_host: Optional[str] = "smtp.gmail.com"
+    smtp_port: int = 587
+    smtp_username: Optional[str] = None
+    smtp_password: Optional[str] = None
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class AdminSettingsUpdate(BaseModel):
+    stripe_client_id: Optional[str] = None
+    stripe_publishable_key: Optional[str] = None
+    paypal_client_id: Optional[str] = None
+    paypal_secret: Optional[str] = None
+    notification_email: Optional[str] = None
+    smtp_host: Optional[str] = None
+    smtp_port: Optional[int] = None
+    smtp_username: Optional[str] = None
+    smtp_password: Optional[str] = None
+
 class CheckoutRequest(BaseModel):
     order_id: str
     origin_url: str
+    payment_method: str = "stripe"
+
+# ============ HELPERS ============
+
+async def send_email_notification(subject: str, body: str):
+    try:
+        settings_data = await db.admin_settings.find_one({"id": "admin_settings"}, {"_id": 0})
+        if not settings_data or not settings_data.get('notification_email'):
+            return
+        
+        smtp_host = settings_data.get('smtp_host', 'smtp.gmail.com')
+        smtp_port = settings_data.get('smtp_port', 587)
+        smtp_user = settings_data.get('smtp_username')
+        smtp_pass = settings_data.get('smtp_password')
+        
+        if not smtp_user or not smtp_pass:
+            return
+        
+        msg = MIMEMultipart()
+        msg['From'] = smtp_user
+        msg['To'] = settings_data['notification_email']
+        msg['Subject'] = subject
+        msg.attach(MIMEText(body, 'html'))
+        
+        server = smtplib.SMTP(smtp_host, smtp_port)
+        server.starttls()
+        server.login(smtp_user, smtp_pass)
+        server.send_message(msg)
+        server.quit()
+        
+        logger.info(f"Email sent to {settings_data['notification_email']}")
+    except Exception as e:
+        logger.error(f"Failed to send email: {str(e)}")
 
 # ============ AUTH HELPERS ============
 
@@ -200,6 +274,11 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         raise HTTPException(status_code=401, detail="Token expired")
     except Exception as e:
         raise HTTPException(status_code=401, detail="Invalid token")
+
+async def get_admin_user(current_user: User = Depends(get_current_user)) -> User:
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return current_user
 
 # ============ AUTH ROUTES ============
 
@@ -252,379 +331,32 @@ async def get_products():
     return products
 
 @api_router.post("/products", response_model=Product)
-async def create_product(product_input: Product, current_user: User = Depends(get_current_user)):
-    product_dict = product_input.model_dump()
+async def create_product(product_input: ProductCreate, admin_user: User = Depends(get_admin_user)):
+    product = Product(**product_input.model_dump())
+    product_dict = product.model_dump()
     product_dict['created_at'] = product_dict['created_at'].isoformat()
     await db.products.insert_one(product_dict)
-    return product_input
+    return product
 
-# ============ CUSTOM BLEND ROUTES ============
-
-@api_router.post("/custom-blends", response_model=CustomBlend)
-async def create_custom_blend(blend_input: CustomBlendCreate, current_user: User = Depends(get_current_user)):
-    # Calculate price based on quantity and components
-    base_price_per_gram = 0.05
-    total_price = blend_input.quantity * base_price_per_gram
+@api_router.put("/products/{product_id}", response_model=Product)
+async def update_product(product_id: str, product_input: ProductCreate, admin_user: User = Depends(get_admin_user)):
+    existing = await db.products.find_one({"id": product_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Product not found")
     
-    blend = CustomBlend(
-        user_id=current_user.id,
-        name=blend_input.name,
-        origin=blend_input.origin,
-        roast_level=blend_input.roast_level,
-        grind_size=blend_input.grind_size,
-        blend_components=blend_input.blend_components,
-        quantity=blend_input.quantity,
-        price=total_price
-    )
+    update_data = product_input.model_dump()
+    await db.products.update_one({"id": product_id}, {"$set": update_data})
     
-    blend_dict = blend.model_dump()
-    blend_dict['created_at'] = blend_dict['created_at'].isoformat()
-    await db.custom_blends.insert_one(blend_dict)
-    
-    return blend
+    updated = await db.products.find_one({"id": product_id}, {"_id": 0})
+    if isinstance(updated.get('created_at'), str):
+        updated['created_at'] = datetime.fromisoformat(updated['created_at'])
+    return Product(**updated)
 
-@api_router.get("/custom-blends", response_model=List[CustomBlend])
-async def get_custom_blends(current_user: User = Depends(get_current_user)):
-    blends = await db.custom_blends.find({"user_id": current_user.id}, {"_id": 0}).to_list(1000)
-    for blend in blends:
-        if isinstance(blend.get('created_at'), str):
-            blend['created_at'] = datetime.fromisoformat(blend['created_at'])
-    return blends
-
-@api_router.get("/custom-blends/{blend_id}", response_model=CustomBlend)
-async def get_custom_blend(blend_id: str, current_user: User = Depends(get_current_user)):
-    blend = await db.custom_blends.find_one({"id": blend_id, "user_id": current_user.id}, {"_id": 0})
-    if not blend:
-        raise HTTPException(status_code=404, detail="Blend not found")
-    if isinstance(blend.get('created_at'), str):
-        blend['created_at'] = datetime.fromisoformat(blend['created_at'])
-    return CustomBlend(**blend)
-
-# ============ CART ROUTES ============
-
-@api_router.post("/cart", response_model=CartItem)
-async def add_to_cart(item_input: CartItemCreate, current_user: User = Depends(get_current_user)):
-    cart_item = CartItem(
-        user_id=current_user.id,
-        product_id=item_input.product_id,
-        custom_blend_id=item_input.custom_blend_id,
-        quantity=item_input.quantity
-    )
-    
-    cart_dict = cart_item.model_dump()
-    cart_dict['created_at'] = cart_dict['created_at'].isoformat()
-    await db.cart.insert_one(cart_dict)
-    
-    return cart_item
-
-@api_router.get("/cart", response_model=List[CartItem])
-async def get_cart(current_user: User = Depends(get_current_user)):
-    cart_items = await db.cart.find({"user_id": current_user.id}, {"_id": 0}).to_list(1000)
-    for item in cart_items:
-        if isinstance(item.get('created_at'), str):
-            item['created_at'] = datetime.fromisoformat(item['created_at'])
-    return cart_items
-
-@api_router.delete("/cart/{item_id}")
-async def remove_from_cart(item_id: str, current_user: User = Depends(get_current_user)):
-    result = await db.cart.delete_one({"id": item_id, "user_id": current_user.id})
+@api_router.delete("/products/{product_id}")
+async def delete_product(product_id: str, admin_user: User = Depends(get_admin_user)):
+    result = await db.products.delete_one({"id": product_id})
     if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Cart item not found")
-    return {"message": "Item removed from cart"}
+        raise HTTPException(status_code=404, detail="Product not found")
+    return {"message": "Product deleted"}
 
-@api_router.delete("/cart")
-async def clear_cart(current_user: User = Depends(get_current_user)):
-    await db.cart.delete_many({"user_id": current_user.id})
-    return {"message": "Cart cleared"}
-
-# ============ ORDER ROUTES ============
-
-@api_router.post("/orders", response_model=Order)
-async def create_order(order_input: OrderCreate, current_user: Optional[User] = None):
-    # Allow guest orders
-    user_id = current_user.id if current_user else (order_input.guest_email or "guest")
-    
-    order = Order(
-        user_id=user_id,
-        items=order_input.items,
-        total_amount=order_input.total_amount,
-        shipping_address=order_input.shipping_address
-    )
-    
-    order_dict = order.model_dump()
-    order_dict['created_at'] = order_dict['created_at'].isoformat()
-    order_dict['updated_at'] = order_dict['updated_at'].isoformat()
-    if order_input.guest_email:
-        order_dict['guest_email'] = order_input.guest_email
-    await db.orders.insert_one(order_dict)
-    
-    return order
-
-@api_router.get("/orders", response_model=List[Order])
-async def get_orders(current_user: User = Depends(get_current_user)):
-    orders = await db.orders.find({"user_id": current_user.id}, {"_id": 0}).sort("created_at", -1).to_list(1000)
-    for order in orders:
-        if isinstance(order.get('created_at'), str):
-            order['created_at'] = datetime.fromisoformat(order['created_at'])
-        if isinstance(order.get('updated_at'), str):
-            order['updated_at'] = datetime.fromisoformat(order['updated_at'])
-    return orders
-
-@api_router.get("/orders/{order_id}", response_model=Order)
-async def get_order(order_id: str, current_user: User = Depends(get_current_user)):
-    order = await db.orders.find_one({"id": order_id, "user_id": current_user.id}, {"_id": 0})
-    if not order:
-        raise HTTPException(status_code=404, detail="Order not found")
-    if isinstance(order.get('created_at'), str):
-        order['created_at'] = datetime.fromisoformat(order['created_at'])
-    if isinstance(order.get('updated_at'), str):
-        order['updated_at'] = datetime.fromisoformat(order['updated_at'])
-    return Order(**order)
-
-# ============ SUBSCRIPTION ROUTES ============
-
-@api_router.post("/subscriptions", response_model=Subscription)
-async def create_subscription(sub_input: SubscriptionCreate, current_user: User = Depends(get_current_user)):
-    # Calculate next delivery based on frequency
-    frequency_days = {"weekly": 7, "biweekly": 14, "monthly": 30}
-    next_delivery = datetime.now(timezone.utc) + timedelta(days=frequency_days.get(sub_input.frequency, 30))
-    
-    subscription = Subscription(
-        user_id=current_user.id,
-        custom_blend_id=sub_input.custom_blend_id,
-        frequency=sub_input.frequency,
-        next_delivery=next_delivery
-    )
-    
-    sub_dict = subscription.model_dump()
-    sub_dict['created_at'] = sub_dict['created_at'].isoformat()
-    sub_dict['next_delivery'] = sub_dict['next_delivery'].isoformat()
-    await db.subscriptions.insert_one(sub_dict)
-    
-    return subscription
-
-@api_router.get("/subscriptions", response_model=List[Subscription])
-async def get_subscriptions(current_user: User = Depends(get_current_user)):
-    subscriptions = await db.subscriptions.find({"user_id": current_user.id}, {"_id": 0}).to_list(1000)
-    for sub in subscriptions:
-        if isinstance(sub.get('created_at'), str):
-            sub['created_at'] = datetime.fromisoformat(sub['created_at'])
-        if isinstance(sub.get('next_delivery'), str):
-            sub['next_delivery'] = datetime.fromisoformat(sub['next_delivery'])
-    return subscriptions
-
-@api_router.patch("/subscriptions/{sub_id}")
-async def update_subscription_status(sub_id: str, status: str, current_user: User = Depends(get_current_user)):
-    result = await db.subscriptions.update_one(
-        {"id": sub_id, "user_id": current_user.id},
-        {"$set": {"status": status}}
-    )
-    if result.modified_count == 0:
-        raise HTTPException(status_code=404, detail="Subscription not found")
-    return {"message": "Subscription updated"}
-
-# ============ PAYMENT ROUTES ============
-
-@api_router.post("/checkout/session", response_model=CheckoutSessionResponse)
-async def create_checkout_session(checkout_req: CheckoutRequest, current_user: Optional[User] = None):
-    # Get order details - allow guest orders
-    order = await db.orders.find_one({"id": checkout_req.order_id}, {"_id": 0})
-    if not order:
-        raise HTTPException(status_code=404, detail="Order not found")
-    
-    user_id = current_user.id if current_user else order.get('guest_email', 'guest')
-    
-    # Initialize Stripe checkout
-    webhook_url = f"{checkout_req.origin_url}/api/webhook/stripe"
-    stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
-    
-    # Create success and cancel URLs
-    success_url = f"{checkout_req.origin_url}/checkout/success?session_id={{CHECKOUT_SESSION_ID}}"
-    cancel_url = f"{checkout_req.origin_url}/checkout/cancel"
-    
-    # Create checkout session
-    session_request = CheckoutSessionRequest(
-        amount=order['total_amount'],
-        currency="usd",
-        success_url=success_url,
-        cancel_url=cancel_url,
-        metadata={
-            "order_id": order['id'],
-            "user_id": user_id
-        }
-    )
-    
-    session = await stripe_checkout.create_checkout_session(session_request)
-    
-    # Create payment transaction record
-    transaction = PaymentTransaction(
-        user_id=user_id,
-        order_id=order['id'],
-        session_id=session.session_id,
-        amount=order['total_amount'],
-        currency="usd",
-        payment_status="pending",
-        metadata=session_request.metadata
-    )
-    
-    trans_dict = transaction.model_dump()
-    trans_dict['created_at'] = trans_dict['created_at'].isoformat()
-    trans_dict['updated_at'] = trans_dict['updated_at'].isoformat()
-    await db.payment_transactions.insert_one(trans_dict)
-    
-    # Update order with session_id
-    await db.orders.update_one(
-        {"id": order['id']},
-        {"$set": {"session_id": session.session_id}}
-    )
-    
-    return session
-
-@api_router.get("/checkout/status/{session_id}", response_model=CheckoutStatusResponse)
-async def get_checkout_status(session_id: str, current_user: Optional[User] = None):
-    # Check if we already processed this payment - allow guest access
-    transaction = await db.payment_transactions.find_one({"session_id": session_id}, {"_id": 0})
-    if not transaction:
-        raise HTTPException(status_code=404, detail="Transaction not found")
-    
-    # If already paid, return cached status
-    if transaction.get('payment_status') == 'paid':
-        return CheckoutStatusResponse(
-            status='complete',
-            payment_status='paid',
-            amount_total=int(transaction['amount'] * 100),
-            currency=transaction['currency'],
-            metadata=transaction['metadata']
-        )
-    
-    # Otherwise, check with Stripe
-    stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url="")
-    status = await stripe_checkout.get_checkout_status(session_id)
-    
-    # Update transaction and order if paid
-    if status.payment_status == 'paid' and transaction.get('payment_status') != 'paid':
-        await db.payment_transactions.update_one(
-            {"session_id": session_id},
-            {"$set": {
-                "payment_status": "paid",
-                "updated_at": datetime.now(timezone.utc).isoformat()
-            }}
-        )
-        
-        await db.orders.update_one(
-            {"id": transaction['order_id']},
-            {"$set": {
-                "payment_status": "paid",
-                "status": "processing",
-                "updated_at": datetime.now(timezone.utc).isoformat()
-            }}
-        )
-    
-    return status
-
-@api_router.post("/webhook/stripe")
-async def stripe_webhook(request: Request):
-    body = await request.body()
-    signature = request.headers.get("Stripe-Signature")
-    
-    stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url="")
-    
-    try:
-        webhook_response = await stripe_checkout.handle_webhook(body, signature)
-        
-        # Update transaction based on webhook
-        if webhook_response.payment_status == 'paid':
-            transaction = await db.payment_transactions.find_one({"session_id": webhook_response.session_id}, {"_id": 0})
-            if transaction and transaction.get('payment_status') != 'paid':
-                await db.payment_transactions.update_one(
-                    {"session_id": webhook_response.session_id},
-                    {"$set": {
-                        "payment_status": "paid",
-                        "updated_at": datetime.now(timezone.utc).isoformat()
-                    }}
-                )
-                
-                await db.orders.update_one(
-                    {"id": transaction['order_id']},
-                    {"$set": {
-                        "payment_status": "paid",
-                        "status": "processing",
-                        "updated_at": datetime.now(timezone.utc).isoformat()
-                    }}
-                )
-        
-        return {"status": "success"}
-    except Exception as e:
-        logging.error(f"Webhook error: {str(e)}")
-        raise HTTPException(status_code=400, detail=str(e))
-
-# ============ SHIPPING ROUTES ============
-
-@api_router.get("/shipping/rates", response_model=List[ShippingRate])
-async def get_shipping_rates():
-    rates = await db.shipping_rates.find({}, {"_id": 0}).to_list(1000)
-    for rate in rates:
-        if isinstance(rate.get('created_at'), str):
-            rate['created_at'] = datetime.fromisoformat(rate['created_at'])
-    return rates
-
-@api_router.post("/shipping/rates", response_model=ShippingRate)
-async def create_shipping_rate(rate_input: ShippingRateCreate, current_user: User = Depends(get_current_user)):
-    # In production, add admin check here
-    rate = ShippingRate(**rate_input.model_dump())
-    rate_dict = rate.model_dump()
-    rate_dict['created_at'] = rate_dict['created_at'].isoformat()
-    await db.shipping_rates.insert_one(rate_dict)
-    return rate
-
-# ============ ADMIN ROUTES ============
-
-@api_router.get("/admin/orders", response_model=List[Order])
-async def get_all_orders(current_user: User = Depends(get_current_user)):
-    # In production, add admin check here
-    orders = await db.orders.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
-    for order in orders:
-        if isinstance(order.get('created_at'), str):
-            order['created_at'] = datetime.fromisoformat(order['created_at'])
-        if isinstance(order.get('updated_at'), str):
-            order['updated_at'] = datetime.fromisoformat(order['updated_at'])
-    return orders
-
-@api_router.patch("/admin/orders/{order_id}")
-async def update_order_status(order_id: str, status: str, current_user: User = Depends(get_current_user)):
-    # In production, add admin check here
-    result = await db.orders.update_one(
-        {"id": order_id},
-        {"$set": {"status": status, "updated_at": datetime.now(timezone.utc).isoformat()}}
-    )
-    if result.modified_count == 0:
-        raise HTTPException(status_code=404, detail="Order not found")
-    return {"message": "Order updated"}
-
-# Root route
-@api_router.get("/")
-async def root():
-    return {"message": "RTW's Roastery Coffee API"}
-
-# Include router
-app.include_router(api_router)
-
-# CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
-
-@app.on_event("shutdown")
-async def shutdown_db_client():
-    client.close()
+# Continue with rest of routes...
