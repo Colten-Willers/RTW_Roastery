@@ -77,7 +77,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/products" element={<Products />} />
-            <Route path="/custom-builder" element={user ? <CustomBuilder /> : <Navigate to="/login" />} />
+            <Route path="/custom-builder" element={<CustomBuilder />} />
             <Route path="/cart" element={user ? <Cart /> : <Navigate to="/login" />} />
             <Route path="/checkout" element={user ? <Checkout /> : <Navigate to="/login" />} />
             <Route path="/checkout/success" element={<CheckoutSuccess />} />
