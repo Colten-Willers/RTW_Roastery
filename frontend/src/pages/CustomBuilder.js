@@ -318,43 +318,39 @@ const CustomBuilder = () => {
             exit={{ opacity: 0, x: -20 }}
             className="space-y-6"
           >
-            <h2 className="text-3xl font-display font-bold text-polo-green mb-8">Select Roast Level</h2>
+            <h2 className="text-3xl font-display font-bold text-polo-green mb-8">Choose Grind Size</h2>
+            <div className="mb-4 p-4 bg-aged-brass/10 rounded-sm border border-aged-brass/30">
+              <p className="text-sm text-polo-green">
+                <span className="font-semibold">Recommended for {brewingMethods.find(m => m.value === blend.brewing_method)?.label}:</span> {brewingMethods.find(m => m.value === blend.brewing_method)?.grind}
+              </p>
+            </div>
             <RadioGroup
-              value={blend.roast_level}
-              onValueChange={(value) => setBlend({ ...blend, roast_level: value })}
-              className="space-y-4"
+              value={blend.grind_size}
+              onValueChange={(value) => setBlend({ ...blend, grind_size: value })}
+              className="grid md:grid-cols-2 gap-4"
             >
-              {roastLevels.map((roast) => (
+              {grindSizes.map((grind) => (
                 <Label
-                  key={roast.value}
-                  htmlFor={roast.value}
-                  className={`cursor-pointer border-2 rounded-sm p-6 transition-all duration-300 flex items-center ${
-                    blend.roast_level === roast.value
+                  key={grind.value}
+                  htmlFor={grind.value}
+                  className={`cursor-pointer border-2 rounded-sm p-6 transition-all duration-300 ${
+                    blend.grind_size === grind.value
                       ? 'border-aged-brass bg-aged-brass/10'
                       : 'border-gray-200 hover:border-aged-brass/50'
                   }`}
                 >
-                  <RadioGroupItem value={roast.value} id={roast.value} className="sr-only" />
-                  <div className="flex-1">
-                    <h3 className="text-xl font-display font-semibold text-polo-green mb-1">{roast.label}</h3>
-                    <p className="text-[var(--text-secondary)]">{roast.description}</p>
+                  <RadioGroupItem value={grind.value} id={grind.value} className="sr-only" />
+                  <div className="text-center">
+                    <div className="text-3xl mb-2">{grind.icon}</div>
+                    <h3 className="text-xl font-display font-semibold text-polo-green">{grind.label}</h3>
                   </div>
-                  <div
-                    className={`w-12 h-12 rounded-full ${
-                      roast.value === 'light'
-                        ? 'bg-amber-300'
-                        : roast.value === 'medium'
-                        ? 'bg-amber-700'
-                        : 'bg-amber-950'
-                    }`}
-                  ></div>
                 </Label>
               ))}
             </RadioGroup>
           </motion.div>
         );
 
-      case 4:
+      case 5:
         return (
           <motion.div
             initial={{ opacity: 0, x: 20 }}
