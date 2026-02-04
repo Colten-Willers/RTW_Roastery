@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import axios from 'axios';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -19,14 +19,39 @@ const CustomBuilder = () => {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
-  const [blend, setBlend] = useState({
-    name: '',
-    origin: 'ethiopian',
-    roast_level: 'medium',
-    grind_size: 'medium',
-    blend_components: { ethiopian: 100 },
-    quantity: 500,
+  const [blend, setBlend] = useState(() => {
+    // Load from localStorage if exists
+    const saved = localStorage.getItem('pendingBlend');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return {
+          name: '',
+          origin: 'ethiopian',
+          roast_level: 'medium',
+          grind_size: 'medium',
+          blend_components: { ethiopian: 100 },
+          quantity: 500,
+        };
+      }
+    }
+    return {
+      name: '',
+      origin: 'ethiopian',
+      roast_level: 'medium',
+      grind_size: 'medium',
+      blend_components: { ethiopian: 100 },
+      quantity: 500,
+    };
   });
+
+  // Save blend to localStorage whenever it changes
+  useEffect(() => {
+    if (blend.name || step > 1) {
+      localStorage.setItem('pendingBlend', JSON.stringify(blend));
+    }
+  }, [blend, step]);
 
   const origins = [
     { value: 'ethiopian', label: 'Ethiopian', description: 'Floral & Citrus' },
@@ -54,6 +79,14 @@ const CustomBuilder = () => {
       return;
     }
 
+    if (!user) {
+      // Save blend and redirect to login
+      localStorage.setItem('pendingBlend', JSON.stringify(blend));
+      toast.info('Please sign in to save your blend');
+      navigate('/login?redirect=custom-builder');
+      return;
+    }
+
     try {
       const response = await axios.post(`${API}/custom-blends`, blend);
       toast.success('Blend saved successfully!');
@@ -63,6 +96,9 @@ const CustomBuilder = () => {
         custom_blend_id: response.data.id,
         quantity: 1,
       });
+      
+      // Clear pending blend
+      localStorage.removeItem('pendingBlend');
       
       toast.success('Added to cart!');
       navigate('/cart');
