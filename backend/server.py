@@ -481,9 +481,9 @@ async def create_checkout_session(checkout_req: CheckoutRequest, current_user: O
     return session
 
 @api_router.get("/checkout/status/{session_id}", response_model=CheckoutStatusResponse)
-async def get_checkout_status(session_id: str, current_user: User = Depends(get_current_user)):
-    # Check if we already processed this payment
-    transaction = await db.payment_transactions.find_one({"session_id": session_id, "user_id": current_user.id}, {"_id": 0})
+async def get_checkout_status(session_id: str, current_user: Optional[User] = None):
+    # Check if we already processed this payment - allow guest access
+    transaction = await db.payment_transactions.find_one({" session_id": session_id}, {"_id": 0})
     if not transaction:
         raise HTTPException(status_code=404, detail="Transaction not found")
     
