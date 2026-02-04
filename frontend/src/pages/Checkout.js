@@ -40,14 +40,26 @@ const Checkout = () => {
 
   const fetchData = async () => {
     try {
-      const [cartRes, productsRes, blendsRes, shippingRes] = await Promise.all([
-        axios.get(`${API}/cart`),
+      let cartData = [];
+      
+      // Try to get cart from localStorage for guests
+      if (!user) {
+        const savedCart = localStorage.getItem('guestCart');
+        if (savedCart) {
+          cartData = JSON.parse(savedCart);
+        }
+      } else {
+        const cartRes = await axios.get(`${API}/cart`);
+        cartData = cartRes.data;
+      }
+
+      const [productsRes, blendsRes, shippingRes] = await Promise.all([
         axios.get(`${API}/products`).catch(() => ({ data: [] })),
-        axios.get(`${API}/custom-blends`).catch(() => ({ data: [] })),
+        user ? axios.get(`${API}/custom-blends`).catch(() => ({ data: [] })) : Promise.resolve({ data: [] }),
         axios.get(`${API}/shipping/rates`).catch(() => ({ data: [{ id: '1', region: 'Standard', rate: 10.0, description: 'Personal Delivery' }] })),
       ]);
 
-      setCartItems(cartRes.data);
+      setCartItems(cartData);
       setProducts(productsRes.data);
       setCustomBlends(blendsRes.data);
       setShippingRates(shippingRes.data);
