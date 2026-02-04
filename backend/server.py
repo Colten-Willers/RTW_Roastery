@@ -119,6 +119,7 @@ class OrderCreate(BaseModel):
     items: List[Dict]
     total_amount: float
     shipping_address: Dict
+    guest_email: Optional[str] = None
 
 class Subscription(BaseModel):
     model_config = ConfigDict(extra="ignore")
