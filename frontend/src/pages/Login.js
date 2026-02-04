@@ -111,7 +111,10 @@ const Login = () => {
           <div className="mt-6 text-center">
             <p className="text-[var(--text-secondary)]">
               Don't have an account?{' '}
-              <Link to="/register" className="text-aged-brass hover:underline font-medium">
+              <Link 
+                to={searchParams.get('redirect') ? `/register?redirect=${searchParams.get('redirect')}` : '/register'} 
+                className="text-aged-brass hover:underline font-medium"
+              >
                 Create one
               </Link>
             </p>
