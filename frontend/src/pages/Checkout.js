@@ -102,6 +102,11 @@ const Checkout = () => {
   };
 
   const handleCheckout = async () => {
+    if (isGuest && !guestEmail) {
+      toast.error('Please enter your email address');
+      return;
+    }
+
     if (!shippingAddress.address || !shippingAddress.city || !shippingAddress.state || !shippingAddress.zip) {
       toast.error('Please fill in all shipping address fields');
       return;
@@ -116,11 +121,17 @@ const Checkout = () => {
         details: getItemDetails(item),
       }));
 
-      const orderResponse = await axios.post(`${API}/orders`, {
+      const orderPayload = {
         items: orderItems,
         total_amount: calculateTotal(),
         shipping_address: shippingAddress,
-      });
+      };
+
+      if (isGuest) {
+        orderPayload.guest_email = guestEmail;
+      }
+
+      const orderResponse = await axios.post(`${API}/orders`, orderPayload);
 
       // Create checkout session
       const originUrl = window.location.origin;
@@ -128,6 +139,11 @@ const Checkout = () => {
         order_id: orderResponse.data.id,
         origin_url: originUrl,
       });
+
+      // Clear guest cart if applicable
+      if (isGuest) {
+        localStorage.removeItem('guestCart');
+      }
 
       // Redirect to Stripe
       window.location.href = checkoutResponse.data.url;
