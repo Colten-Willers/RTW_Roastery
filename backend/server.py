@@ -340,9 +340,12 @@ async def clear_cart(current_user: User = Depends(get_current_user)):
 # ============ ORDER ROUTES ============
 
 @api_router.post("/orders", response_model=Order)
-async def create_order(order_input: OrderCreate, current_user: User = Depends(get_current_user)):
+async def create_order(order_input: OrderCreate, current_user: Optional[User] = None):
+    # Allow guest orders
+    user_id = current_user.id if current_user else (order_input.guest_email or "guest")
+    
     order = Order(
-        user_id=current_user.id,
+        user_id=user_id,
         items=order_input.items,
         total_amount=order_input.total_amount,
         shipping_address=order_input.shipping_address
@@ -351,6 +354,8 @@ async def create_order(order_input: OrderCreate, current_user: User = Depends(ge
     order_dict = order.model_dump()
     order_dict['created_at'] = order_dict['created_at'].isoformat()
     order_dict['updated_at'] = order_dict['updated_at'].isoformat()
+    if order_input.guest_email:
+        order_dict['guest_email'] = order_input.guest_email
     await db.orders.insert_one(order_dict)
     
     return order
