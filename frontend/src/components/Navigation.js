@@ -17,7 +17,7 @@ const Navigation = () => {
           <Link data-testid="nav-logo-link" to="/" className="flex items-center space-x-2 group">
             <Coffee className="w-8 h-8 text-aged-brass" />
             <span className="text-2xl font-display font-semibold text-bg-light group-hover:text-aged-brass transition-all duration-300">
-              Ralph's Roast
+              RTW's Roastery
             </span>
           </Link>
 
