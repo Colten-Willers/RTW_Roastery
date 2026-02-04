@@ -1,0 +1,115 @@
+{
+  "brand_identity": {
+    "name": "Ralph's Roast (Internal Code Name)",
+    "core_values": ["Heritage", "Artisanal Precision", "Old Money Aesthetic", "Natural Luxury"],
+    "visual_style": "Ralph Lauren inspired: Dark wood, deep greens, brass accents, cream paper textures. Cinematic and moody.",
+    "tone_of_voice": "Sophisticated, knowledgeable, intimate. Less 'Start your day', more 'Craft your legacy'."
+  },
+  "color_palette": {
+    "primary": {
+      "name": "Polo Green",
+      "hex": "#1A2F23",
+      "usage": "Primary buttons, active states, dark section backgrounds"
+    },
+    "secondary": {
+      "name": "Aged Brass",
+      "hex": "#C5A059",
+      "usage": "Accents, borders, highlights, price tags"
+    },
+    "background": {
+      "light": "#F5F2EA",
+      "dark": "#0F1C15",
+      "paper": "#EBE8E1"
+    },
+    "text": {
+      "primary": "#1A1A1A",
+      "secondary": "#4A4A4A",
+      "inverse": "#F5F2EA"
+    },
+    "functional": {
+      "success": "#2D5A27",
+      "error": "#8B2E2E",
+      "warning": "#D48806"
+    }
+  },
+  "typography": {
+    "headings": {
+      "family": "Playfair Display, serif",
+      "weights": ["400", "600", "700"],
+      "usage": "All section titles, hero text, product names. Letter-spacing: -0.02em."
+    },
+    "body": {
+      "family": "DM Sans, sans-serif",
+      "weights": ["400", "500"],
+      "usage": "Paragraphs, UI elements, inputs. Letter-spacing: 0.01em."
+    },
+    "accent": {
+      "family": "Cormorant Garamond, serif",
+      "weights": ["400", "italic"],
+      "usage": "Quotes, testimonials, 'Our Story' snippets."
+    }
+  },
+  "layout_strategies": {
+    "global": "Use generous padding (p-12 to p-24). Avoid clutter. Every screen should feel like a magazine spread.",
+    "hero_section": "Full-screen immersive video or high-res image with overlay. Text aligned bottom-left or center with 'fade-up' animation.",
+    "product_grid": "Asymmetrical 'Masonry' or 'Bento' grid. Mix product cards with lifestyle images (people drinking coffee, beans texture).",
+    "custom_builder": "Split-screen layout. Left: Interactive controls (Sliders, Selectors). Right: Dynamic visual representation of the coffee bag/cup updating in real-time."
+  },
+  "ui_components": {
+    "buttons": {
+      "primary": "Solid #1A2F23 background, #C5A059 text (on hover). Sharp corners or 2px radius. Uppercase text with wide tracking.",
+      "secondary": "Transparent background, 1px solid #1A2F23 border. Dark text.",
+      "ghost": "Text only with animated underline on hover."
+    },
+    "cards": {
+      "style": "Flat, no shadow by default. 1px solid border in #E5E5E5 or transparent. On hover: subtle lift and border color change to #C5A059.",
+      "content": "Image takes up 70% of card height. Typography is centered or strictly left-aligned."
+    },
+    "inputs": {
+      "style": "Underline only (border-b) or minimal box with #E5E5E5 border. Focus state: #1A2F23 border. Background: Transparent."
+    },
+    "navigation": {
+      "style": "Sticky glassmorphism (backdrop-blur-md) with #1A2F23/90 background. White text. Gold accent on active link."
+    }
+  },
+  "feature_specs": {
+    "custom_builder": {
+      "flow": "Step-by-Step 'Wizard' style.",
+      "steps": [
+        "1. Choose Base Origin (Map visualization)",
+        "2. Select Roast Level (Slider: Light -> Dark)",
+        "3. Grind Size (Visual icons: Fine, Medium, Coarse)",
+        "4. Add Flavors/Blend (Checkbox grid with icons)",
+        "5. Packaging (Bag size, Label customization)"
+      ],
+      "ui_note": "Must feel tactile. Use sound effects (optional) or satisfying micro-interactions when selecting."
+    },
+    "shipping_admin": {
+      "note": "Since shipping is manual, the Admin Dashboard needs a specific 'Logistics' tab where admin can set custom shipping rates per region or weight."
+    }
+  },
+  "image_urls": {
+    "hero_background": "https://images.unsplash.com/photo-1735910626330-25ce60e05e84?crop=entropy&cs=srgb&fm=jpg&q=85",
+    "coffee_beans_texture": "https://images.unsplash.com/photo-1769437082791-8c9af44d7c28?crop=entropy&cs=srgb&fm=jpg&q=85",
+    "plantation_mist": "https://images.unsplash.com/photo-1573898086906-1f9232b65467?crop=entropy&cs=srgb&fm=jpg&q=85",
+    "brewing_process": "https://images.unsplash.com/photo-1670899603742-726393a354fc?crop=entropy&cs=srgb&fm=jpg&q=85",
+    "lifestyle_drinking": "https://images.unsplash.com/photo-1687825807239-f880c177aea4?crop=entropy&cs=srgb&fm=jpg&q=85"
+  },
+  "instructions_to_main_agent": [
+    "INSTALL 'lucide-react' for icons.",
+    "INSTALL 'framer-motion' for animations.",
+    "INSTALL 'clsx' and 'tailwind-merge' for class management.",
+    "Use 'Playfair Display' from Google Fonts. Add import to index.css.",
+    "Implement the 'Custom Builder' as a priority feature. It is the USP.",
+    "Ensure the 'Admin Panel' has a dark mode option for the 'Logistics' tab.",
+    "Use the provided image URLs for placeholders. DO NOT use gray boxes.",
+    "For the 'Ralph Lauren' feel, use high contrast between the dark green and the cream/gold.",
+    "The 'My Muesli' inspiration means the builder must be highly granular. Allow mixing percentages if possible."
+  ],
+  "universal_guidelines": {
+    "spacing": "Use p-8, p-12, p-16. Don't be afraid of empty space.",
+    "animation": "All hover states must have `transition-all duration-300 ease-out`. No instant changes.",
+    "border_radius": "Keep it tight. `rounded-sm` or `rounded-md` max. No pill shapes unless for tags.",
+    "shadows": "Use `shadow-lg` only for floating elements (modals, sticky headers). Cards should be flat."
+  }
+}
