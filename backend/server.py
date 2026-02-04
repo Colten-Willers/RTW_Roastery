@@ -428,7 +428,7 @@ async def update_subscription_status(sub_id: str, status: str, current_user: Use
 @api_router.post("/checkout/session", response_model=CheckoutSessionResponse)
 async def create_checkout_session(checkout_req: CheckoutRequest, current_user: Optional[User] = None):
     # Get order details - allow guest orders
-    order = await db.orders.find_one({" id": checkout_req.order_id}, {"_id": 0})
+    order = await db.orders.find_one({"id": checkout_req.order_id}, {"_id": 0})
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     
