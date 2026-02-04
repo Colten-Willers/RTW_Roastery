@@ -190,6 +190,50 @@ const CustomBuilder = () => {
             exit={{ opacity: 0, x: -20 }}
             className="space-y-6"
           >
+            <h2 className="text-3xl font-display font-bold text-polo-green mb-8">How Will You Brew?</h2>
+            <p className="text-[var(--text-secondary)] mb-6">
+              Choose your brewing method and we'll recommend the perfect grind size and roast level.
+            </p>
+            <RadioGroup
+              value={blend.brewing_method}
+              onValueChange={(value) => setBlend({ ...blend, brewing_method: value })}
+              className="grid md:grid-cols-2 gap-4"
+            >
+              {brewingMethods.map((method) => (
+                <Label
+                  key={method.value}
+                  htmlFor={method.value}
+                  className={`cursor-pointer border-2 rounded-sm p-6 transition-all duration-300 ${
+                    blend.brewing_method === method.value
+                      ? 'border-aged-brass bg-aged-brass/10'
+                      : 'border-gray-200 hover:border-aged-brass/50'
+                  }`}
+                >
+                  <RadioGroupItem value={method.value} id={method.value} className="sr-only" />
+                  <div className="flex items-start">
+                    <span className="text-4xl mr-4">{method.icon}</span>
+                    <div className="flex-1">
+                      <h3 className="text-xl font-display font-semibold text-polo-green mb-1">{method.label}</h3>
+                      <p className="text-sm text-[var(--text-secondary)] mb-2">{method.description}</p>
+                      <div className="text-xs text-aged-brass font-medium">
+                        Grind: {method.grind} • Roast: {method.roast}
+                      </div>
+                    </div>
+                  </div>
+                </Label>
+              ))}
+            </RadioGroup>
+          </motion.div>
+        );
+
+      case 2:
+        return (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="space-y-6"
+          >
             <h2 className="text-3xl font-display font-bold text-polo-green mb-8">Choose Your Origin</h2>
             <RadioGroup
               value={blend.origin}
