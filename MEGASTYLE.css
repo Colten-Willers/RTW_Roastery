@@ -1,0 +1,73 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@400;500&family=Cormorant+Garamond:ital,wght@0,400;1,400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --polo-green: #1A2F23;
+    --aged-brass: #C5A059;
+    --bg-light: #F5F2EA;
+    --bg-dark: #0F1C15;
+    --bg-paper: #EBE8E1;
+    --text-primary: #1A1A1A;
+    --text-secondary: #4A4A4A;
+    --text-inverse: #F5F2EA;
+    --success: #2D5A27;
+    --error: #8B2E2E;
+    --warning: #D48806;
+
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+    --primary: 146 32% 14%;
+    --primary-foreground: 40 29% 88%;
+    --secondary: 40 39% 57%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+    --accent: 0 0% 96.1%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 64% 36%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: 146 32% 14%;
+    --radius: 0.25rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-[var(--bg-light)] text-[var(--text-primary)];
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Playfair Display', serif;
+    letter-spacing: -0.02em;
+  }
+
+  button, a, input, select {
+    transition: all 0.3s ease-out;
+  }
+
+  *:focus-visible {
+    outline: 2px solid var(--aged-brass);
+    outline-offset: 2px;
+  }
+}
+
+.font-display {
+  font-family: 'Playfair Display', serif;
+}
+
+.font-accent {
+  font-family: 'Cormorant Garamond', serif;
+}
