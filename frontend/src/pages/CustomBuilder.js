@@ -356,10 +356,12 @@ const CustomBuilder = () => {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
-            className="space-y-6"
+            className="grid lg:grid-cols-2 gap-8"
           >
-            <h2 className="text-3xl font-display font-bold text-polo-green mb-8">Quantity & Name</h2>
+            {/* Left: Form */}
             <div className="space-y-6">
+              <h2 className="text-3xl font-display font-bold text-polo-green mb-8">Finalize Your Blend</h2>
+              
               <div>
                 <Label className="text-lg font-medium text-polo-green mb-3 block">
                   Quantity: {blend.quantity}g
@@ -395,17 +397,77 @@ const CustomBuilder = () => {
               </div>
 
               <Card className="p-6 bg-bg-paper border-aged-brass/30">
-                <h3 className="text-xl font-display font-semibold text-polo-green mb-4">Your Blend Summary</h3>
-                <div className="space-y-2 text-[var(--text-secondary)]">
+                <h3 className="text-xl font-display font-semibold text-polo-green mb-4">Your Blend Details</h3>
+                <div className="space-y-2 text-sm text-[var(--text-secondary)]">
+                  <p><span className="font-medium text-polo-green">Brewing Method:</span> {brewingMethods.find(m => m.value === blend.brewing_method)?.label}</p>
                   <p><span className="font-medium text-polo-green">Origin:</span> {origins.find(o => o.value === blend.origin)?.label}</p>
                   <p><span className="font-medium text-polo-green">Roast:</span> {roastLevels.find(r => r.value === blend.roast_level)?.label}</p>
                   <p><span className="font-medium text-polo-green">Grind:</span> {grindSizes.find(g => g.value === blend.grind_size)?.label}</p>
                   <p><span className="font-medium text-polo-green">Quantity:</span> {blend.quantity}g</p>
-                  <p className="text-2xl font-display font-bold text-aged-brass pt-4">
+                  <p className="text-3xl font-display font-bold text-aged-brass pt-4">
                     ${(blend.quantity * 0.05).toFixed(2)}
                   </p>
                 </div>
               </Card>
+            </div>
+
+            {/* Right: Preview Visualization */}
+            <div className="relative">
+              <div className="sticky top-24">
+                <h3 className="text-2xl font-display font-semibold text-polo-green mb-6 text-center">
+                  Preview
+                </h3>
+                <div className="relative bg-gradient-to-br from-polo-green to-bg-dark p-8 rounded-lg shadow-2xl">
+                  {/* Coffee Bag Visualization */}
+                  <div className="bg-bg-paper rounded-lg p-8 relative overflow-hidden">
+                    {/* Decorative elements */}
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-aged-brass/10 rounded-full -mr-16 -mt-16"></div>
+                    <div className="absolute bottom-0 left-0 w-24 h-24 bg-aged-brass/10 rounded-full -ml-12 -mb-12"></div>
+                    
+                    <div className="relative z-10 text-center">
+                      <Coffee className="w-16 h-16 text-aged-brass mx-auto mb-4" />
+                      
+                      <h4 className="text-3xl font-display font-bold text-polo-green mb-2">
+                        {blend.name || 'Your Custom Blend'}
+                      </h4>
+                      
+                      <p className="text-sm text-aged-brass font-medium mb-6 tracking-wider">
+                        RTW'S ROASTERY
+                      </p>
+
+                      <div className="space-y-3 mb-6">
+                        <div className="flex items-center justify-between py-2 border-b border-polo-green/20">
+                          <span className="text-sm text-[var(--text-secondary)]">Origin</span>
+                          <span className="text-sm font-semibold text-polo-green">{origins.find(o => o.value === blend.origin)?.label}</span>
+                        </div>
+                        <div className="flex items-center justify-between py-2 border-b border-polo-green/20">
+                          <span className="text-sm text-[var(--text-secondary)]">Roast</span>
+                          <span className="text-sm font-semibold text-polo-green">{roastLevels.find(r => r.value === blend.roast_level)?.label}</span>
+                        </div>
+                        <div className="flex items-center justify-between py-2 border-b border-polo-green/20">
+                          <span className="text-sm text-[var(--text-secondary)]">Grind</span>
+                          <span className="text-sm font-semibold text-polo-green">{grindSizes.find(g => g.value === blend.grind_size)?.label}</span>
+                        </div>
+                        <div className="flex items-center justify-between py-2 border-b border-polo-green/20">
+                          <span className="text-sm text-[var(--text-secondary)]">Method</span>
+                          <span className="text-sm font-semibold text-polo-green">{brewingMethods.find(m => m.value === blend.brewing_method)?.label}</span>
+                        </div>
+                      </div>
+
+                      <div className="bg-polo-green text-bg-light py-3 px-4 rounded-sm">
+                        <p className="text-sm mb-1">Net Weight</p>
+                        <p className="text-2xl font-display font-bold">{blend.quantity}g</p>
+                      </div>
+
+                      <div className="mt-6 pt-6 border-t border-polo-green/20">
+                        <p className="text-xs text-[var(--text-secondary)] italic">
+                          "Crafted to perfection for your {brewingMethods.find(m => m.value === blend.brewing_method)?.label.toLowerCase()}"
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </motion.div>
         );
