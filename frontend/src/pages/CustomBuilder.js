@@ -423,7 +423,7 @@ const CustomBuilder = () => {
           <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
             <div
               className="bg-aged-brass h-full transition-all duration-500"
-              style={{ width: `${(step / 4) * 100}%` }}
+              style={{ width: `${(step / 5) * 100}%` }}
             ></div>
           </div>
         </div>
