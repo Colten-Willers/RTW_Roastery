@@ -172,6 +172,35 @@ const Checkout = () => {
         >
           <h1 className="text-4xl font-display font-bold text-polo-green mb-8">Checkout</h1>
 
+          {/* Guest or Registered User Toggle */}
+          {!user && (
+            <Card className="p-6 mb-8 border-polo-green/20">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-display font-semibold text-polo-green">Checkout Options</h2>
+              </div>
+              <div className="grid md:grid-cols-2 gap-4">
+                <button
+                  data-testid="guest-checkout-option"
+                  onClick={() => setIsGuest(true)}
+                  className={`p-4 rounded-sm border-2 transition-all duration-300 text-left ${
+                    isGuest ? 'border-aged-brass bg-aged-brass/10' : 'border-gray-200 hover:border-aged-brass/50'
+                  }`}
+                >
+                  <h3 className="font-display font-semibold text-polo-green mb-1">Continue as Guest</h3>
+                  <p className="text-sm text-[var(--text-secondary)]">Quick checkout with email only</p>
+                </button>
+                <button
+                  data-testid="login-checkout-option"
+                  onClick={() => navigate('/login?redirect=checkout')}
+                  className="p-4 rounded-sm border-2 border-gray-200 hover:border-aged-brass/50 transition-all duration-300 text-left"
+                >
+                  <h3 className="font-display font-semibold text-polo-green mb-1">Sign In</h3>
+                  <p className="text-sm text-[var(--text-secondary)]">Track orders & save preferences</p>
+                </button>
+              </div>
+            </Card>
+          )}
+
           <div className="grid lg:grid-cols-2 gap-8">
             {/* Shipping Information */}
             <div>
