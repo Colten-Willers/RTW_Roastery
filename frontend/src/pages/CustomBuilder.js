@@ -28,9 +28,10 @@ const CustomBuilder = () => {
       } catch (e) {
         return {
           name: '',
+          brewing_method: 'espresso',
           origin: 'ethiopian',
           roast_level: 'medium',
-          grind_size: 'medium',
+          grind_size: 'fine',
           blend_components: { ethiopian: 100 },
           quantity: 500,
         };
@@ -38,9 +39,10 @@ const CustomBuilder = () => {
     }
     return {
       name: '',
+      brewing_method: 'espresso',
       origin: 'ethiopian',
       roast_level: 'medium',
-      grind_size: 'medium',
+      grind_size: 'fine',
       blend_components: { ethiopian: 100 },
       quantity: 500,
     };
