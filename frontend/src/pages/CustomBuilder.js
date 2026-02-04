@@ -442,7 +442,7 @@ const CustomBuilder = () => {
             Back
           </Button>
 
-          {step < 4 ? (
+          {step < 5 ? (
             <Button
               data-testid="builder-next-button"
               onClick={() => setStep(Math.min(4, step + 1))}
