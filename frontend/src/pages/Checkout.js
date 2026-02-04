@@ -22,6 +22,8 @@ const Checkout = () => {
   const [shippingRates, setShippingRates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const [isGuest, setIsGuest] = useState(!user);
+  const [guestEmail, setGuestEmail] = useState('');
   const [shippingAddress, setShippingAddress] = useState({
     name: user?.name || '',
     address: '',
