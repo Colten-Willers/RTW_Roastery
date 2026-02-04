@@ -55,6 +55,76 @@ const CustomBuilder = () => {
     }
   }, [blend, step]);
 
+  // Update grind size based on brewing method
+  useEffect(() => {
+    const grindRecommendations = {
+      espresso: 'fine',
+      aeropress: 'fine',
+      pour_over: 'medium',
+      drip: 'medium',
+      french_press: 'coarse',
+      cold_brew: 'coarse',
+    };
+    
+    if (blend.brewing_method && step === 1) {
+      setBlend(prev => ({
+        ...prev,
+        grind_size: grindRecommendations[prev.brewing_method] || 'medium'
+      }));
+    }
+  }, [blend.brewing_method]);
+
+  const brewingMethods = [
+    { 
+      value: 'espresso', 
+      label: 'Espresso', 
+      icon: '☕', 
+      description: 'Rich, concentrated shot',
+      grind: 'Fine',
+      roast: 'Medium to Dark'
+    },
+    { 
+      value: 'pour_over', 
+      label: 'Pour Over', 
+      icon: '🫗', 
+      description: 'Clean, nuanced flavors',
+      grind: 'Medium',
+      roast: 'Light to Medium'
+    },
+    { 
+      value: 'french_press', 
+      label: 'French Press', 
+      icon: '🫖', 
+      description: 'Full-bodied, bold',
+      grind: 'Coarse',
+      roast: 'Medium to Dark'
+    },
+    { 
+      value: 'aeropress', 
+      label: 'AeroPress', 
+      icon: '💨', 
+      description: 'Smooth, versatile',
+      grind: 'Fine to Medium',
+      roast: 'Any'
+    },
+    { 
+      value: 'drip', 
+      label: 'Drip Coffee', 
+      icon: '☕', 
+      description: 'Classic, consistent',
+      grind: 'Medium',
+      roast: 'Medium'
+    },
+    { 
+      value: 'cold_brew', 
+      label: 'Cold Brew', 
+      icon: '🧊', 
+      description: 'Smooth, sweet',
+      grind: 'Coarse',
+      roast: 'Medium to Dark'
+    },
+  ];
+
   const origins = [
     { value: 'ethiopian', label: 'Ethiopian', description: 'Floral & Citrus' },
     { value: 'colombian', label: 'Colombian', description: 'Balanced & Sweet' },
