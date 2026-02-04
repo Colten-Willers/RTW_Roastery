@@ -128,7 +128,10 @@ const Register = () => {
           <div className="mt-6 text-center">
             <p className="text-[var(--text-secondary)]">
               Already have an account?{' '}
-              <Link to="/login" className="text-aged-brass hover:underline font-medium">
+              <Link 
+                to={searchParams.get('redirect') ? `/login?redirect=${searchParams.get('redirect')}` : '/login'} 
+                className="text-aged-brass hover:underline font-medium"
+              >
                 Sign in
               </Link>
             </p>
