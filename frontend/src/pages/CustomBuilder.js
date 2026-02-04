@@ -305,7 +305,7 @@ const CustomBuilder = () => {
           </motion.div>
         );
 
-      case 3:
+      case 4:
         return (
           <motion.div
             initial={{ opacity: 0, x: 20 }}
