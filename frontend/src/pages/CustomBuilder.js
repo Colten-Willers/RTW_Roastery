@@ -414,7 +414,7 @@ const CustomBuilder = () => {
             Craft Your Perfect Blend
           </h1>
           <p className="text-lg text-[var(--text-secondary)]">
-            Step {step} of 4
+            Step {step} of 5
           </p>
         </div>
 
