@@ -445,7 +445,7 @@ const CustomBuilder = () => {
           {step < 5 ? (
             <Button
               data-testid="builder-next-button"
-              onClick={() => setStep(Math.min(4, step + 1))}
+              onClick={() => setStep(Math.min(5, step + 1))}
               className="bg-polo-green text-bg-light hover:bg-polo-green/90"
             >
               Next Step
