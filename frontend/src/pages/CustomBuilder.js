@@ -358,41 +358,6 @@ const CustomBuilder = () => {
             exit={{ opacity: 0, x: -20 }}
             className="space-y-6"
           >
-            <h2 className="text-3xl font-display font-bold text-polo-green mb-8">Choose Grind Size</h2>
-            <RadioGroup
-              value={blend.grind_size}
-              onValueChange={(value) => setBlend({ ...blend, grind_size: value })}
-              className="grid md:grid-cols-2 gap-4"
-            >
-              {grindSizes.map((grind) => (
-                <Label
-                  key={grind.value}
-                  htmlFor={grind.value}
-                  className={`cursor-pointer border-2 rounded-sm p-6 transition-all duration-300 ${
-                    blend.grind_size === grind.value
-                      ? 'border-aged-brass bg-aged-brass/10'
-                      : 'border-gray-200 hover:border-aged-brass/50'
-                  }`}
-                >
-                  <RadioGroupItem value={grind.value} id={grind.value} className="sr-only" />
-                  <div className="text-center">
-                    <div className="text-3xl mb-2">{grind.icon}</div>
-                    <h3 className="text-xl font-display font-semibold text-polo-green">{grind.label}</h3>
-                  </div>
-                </Label>
-              ))}
-            </RadioGroup>
-          </motion.div>
-        );
-
-      case 5:
-        return (
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="space-y-6"
-          >
             <h2 className="text-3xl font-display font-bold text-polo-green mb-8">Quantity & Name</h2>
             <div className="space-y-6">
               <div>
