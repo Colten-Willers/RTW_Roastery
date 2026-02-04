@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ const API = `${BACKEND_URL}/api`;
 const Register = () => {
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -31,7 +32,17 @@ const Register = () => {
       const response = await axios.post(`${API}/auth/register`, formData);
       login(response.data.token, response.data.user);
       toast.success('Account created successfully!');
-      navigate('/custom-builder');
+      
+      // Check if there's a pending blend
+      const pendingBlend = localStorage.getItem('pendingBlend');
+      const redirect = searchParams.get('redirect');
+      
+      if (pendingBlend && redirect === 'custom-builder') {
+        navigate('/custom-builder');
+        toast.info('Continue building your custom blend!');
+      } else {
+        navigate('/custom-builder');
+      }
     } catch (error) {
       console.error('Registration error:', error);
       toast.error(error.response?.data?.detail || 'Registration failed');
