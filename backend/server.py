@@ -596,7 +596,7 @@ async def update_order_status(order_id: str, status: str, current_user: User = D
 # Root route
 @api_router.get("/")
 async def root():
-    return {"message": "Ralph's Roast Coffee API"}
+    return {"message": "RTW's Roastery Coffee API"}
 
 # Include router
 app.include_router(api_router)
